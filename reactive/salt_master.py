@@ -53,8 +53,14 @@ def generate_ssh_key():
         with open(publicKey,'wb') as file:
             file.write(public_key)
         print("is_rsa.pub: {}".format(repr(public_key)))
+    # Correct permissions
     os.chmod(privateKey,0o600)
     os.chmod(publicKey,0o600)
+    # Add to ubuntu user
+    shutil.copy(privateKey,'/home/ubuntu/.ssh/id_rsa')
+    shutil.chown('/home/ubuntu/.ssh/id_rsa',user='ubuntu',group='ubuntu')
+    shutil.copy(publicKey,'/home/ubuntu/.ssh/id_rsa.pub')
+    shutil.chown('/home/ubuntu/.ssh/id_rsa.pub',user='ubuntu',group='ubuntu')
     set_state('ssh-key.generated')
 
 @when('ssh-key.generated')
@@ -63,8 +69,10 @@ def pull_repository():
     config = hookenv.config()
     try:
         os.environ["GIT_SSH_COMMAND"] = "ssh -i $JUJU_CHARM_DIR/rsa/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-        subprocess.call(["git clone {} /srv".format(config['git-repo'])],shell=True)     
+        subprocess.check_call(["git clone {} /srv".format(config['git-repo'])],shell=True)     
     except Exception as e:
-        print(e)
+        print("Unable to pull git repository")
+        raise
     set_state('git-cloned')
+
 
