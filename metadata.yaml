@@ -10,6 +10,16 @@ tags:
 subordinate: false
 series:
   - xenial
+resources:
+  public-key:
+    type: file
+    filename: id_rsa.pub
+    description: "public ssh key"
+  private-key:
+    type: file
+    filename: id_rsa
+    description: "private ssh key"
+
 #provides:
 #  provides-relation:
 #    interface: interface-name
