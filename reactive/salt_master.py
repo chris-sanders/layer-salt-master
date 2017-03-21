@@ -1,6 +1,7 @@
 from charms.reactive import when, when_not, set_state
 from charmhelpers.core import hookenv
 from charmhelpers.core.hookenv import status_set, resource_get
+from charmhelpers.core.host import chownr
 from charmhelpers.fetch import apt_install
 from cryptography.hazmat.primitives import serialization as crypto_serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -52,7 +53,7 @@ def generate_ssh_key():
             file.write(private_key)
         with open(publicKey,'wb') as file:
             file.write(public_key)
-        print("is_rsa.pub: {}".format(repr(public_key)))
+        print("Generated RSA key id_rsa.pub: {}".format(repr(public_key)))
     # Correct permissions
     os.chmod(privateKey,0o600)
     os.chmod(publicKey,0o600)
@@ -72,7 +73,8 @@ def pull_repository():
         subprocess.check_call(["git clone {} /srv".format(config['git-repo'])],shell=True)     
     except Exception as e:
         print("Unable to pull git repository")
-        raise
+        return
+    chownr('/srv',owner='ubuntu',group='ubuntu')
     set_state('git-cloned')
 
 
