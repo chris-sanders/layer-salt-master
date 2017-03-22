@@ -88,9 +88,10 @@ def pull_repository():
     config = hookenv.config()
     try:
         os.environ["GIT_SSH_COMMAND"] = "ssh -i $JUJU_CHARM_DIR/rsa/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-        subprocess.check_call(["git clone {} /srv".format(config['git-repo'])],shell=True)     
+        subprocess.check_call(["git clone --recursive {} /srv".format(config['git-repo'])],shell=True)     
     except Exception as e:
         status_set('maintenance','repository not available')
+        shutil.rmtree('/srv')
         log("Unable to pull git repository")
         return
     set_state('git-cloned')
