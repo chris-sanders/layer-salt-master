@@ -89,11 +89,10 @@ def pull_repository():
     try:
         os.environ["GIT_SSH_COMMAND"] = "ssh -i $JUJU_CHARM_DIR/rsa/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
         subprocess.check_call(["git clone --recursive {} /srv".format(config['git-repo'])],shell=True)     
+        set_state('git-cloned')
     except Exception as e:
         status_set('maintenance','repository not available')
         shutil.rmtree('/srv')
         log("Unable to pull git repository")
-        return
-    set_state('git-cloned')
 
 
