@@ -3,12 +3,8 @@ options:
     type: string
     default: ""
     description: "A git repository to clone for salt configurations"
-#  boolean-option:
-#    type: boolean
-#    default: False
-#    description: "A short description of the configuration option"
-#  int-option:
-#    type: int
-#    default: 9001
-#    description: "A short description of the configuration option"
+  formula-path:
+    type: string
+    default: "/srv/salt/saltstack-formulas/"
+    description: "Location for formula submodules to configure"
 
