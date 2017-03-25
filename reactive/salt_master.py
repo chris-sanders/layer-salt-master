@@ -99,7 +99,6 @@ def pull_repository():
 @when_not('roots.conf-written')
 def setup_formulas():
   config = hookenv.config()
-  config['formula-path']='/srv/salt/saltstack-formulas/'
   formulas = [name for name in os.listdir(config['formula-path']) if os.path.isdir(os.path.join(config['formula-path'],name))] 
   with open('/etc/salt/master.d/file_roots.conf','w') as conf:
     conf.write('''
