@@ -81,6 +81,7 @@ def create_repository():
     os.makedirs('/srv/salt/salt-formulas')
     os.makedirs('/srv/pillar')
     subprocess.check_call(["git init /srv"],shell=True)
+    set_state('salt-master.ready')
     set_state('git-created')
 
 def pull_repository():
@@ -108,4 +109,9 @@ file_roots:
     for directory in formulas:
       conf.write("    -{}\n".format(os.path.join(config['formula-path'],directory)))
   set_state('roots.conf-written')
+  set_state('salt-master.ready')
 
+@when('salt-master.ready')
+@when('saltinfo.unconfigured')
+def configure_interface(saltinfo):
+    saltinfo.configure()

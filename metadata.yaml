@@ -19,10 +19,9 @@ resources:
     type: file
     filename: id_rsa
     description: "private ssh key"
-
-#provides:
-#  provides-relation:
-#    interface: interface-name
+provides:
+  saltinfo:
+    interface: salt
 #requires:
 #  requires-relation:
 #    interface: interface-name
