@@ -1,14 +1,16 @@
-from charms.reactive import when, when_not, set_state
-from charmhelpers.core import hookenv
-from charmhelpers.core.hookenv import status_set, resource_get, log
-from charmhelpers.core.host import chownr
+from charms.reactive import when, when_not, set_state, remove_state
 from charmhelpers.fetch import apt_install
+from charmhelpers.core import hookenv
+from charmhelpers.core.host import chownr
+from charmhelpers.core.services.base import service_restart
+from charmhelpers.core.hookenv import status_set, resource_get, log, unit_public_ip
 from cryptography.hazmat.primitives import serialization as crypto_serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend as crypto_default_backend
 import os
 import subprocess
 import shutil
+import socket
 
 @when_not('salt-master.installed')
 @when('salt-common.installed')
@@ -97,21 +99,36 @@ def pull_repository():
         log("Unable to pull git repository")
 
 @when('git-cloned')
-@when_not('roots.conf-written')
+@when_not('conf.written')
 def setup_formulas():
-  config = hookenv.config()
-  formulas = [name for name in os.listdir(config['formula-path']) if os.path.isdir(os.path.join(config['formula-path'],name))] 
-  with open('/etc/salt/master.d/file_roots.conf','w') as conf:
-    conf.write('''
+    config = hookenv.config()
+    formulas = [name for name in os.listdir(config['formula-path']) if os.path.isdir(os.path.join(config['formula-path'],name))] 
+    with open('/etc/salt/master.d/file_roots.conf','w') as conf:
+        conf.write('''
 file_roots:
   base:
-    -/srv/salt\n''')
-    for directory in formulas:
-      conf.write("    -{}\n".format(os.path.join(config['formula-path'],directory)))
-  set_state('roots.conf-written')
-  set_state('salt-master.ready')
+    - /srv/salt\n''')
+        for directory in formulas:
+            conf.write("    - {}\n".format(os.path.join(config['formula-path'],directory)))
+    with open('/etc/salt/master.d/auot_accept.conf','w') as conf:
+        conf.write("auto_accept: True")    
+    service_restart('salt-master')
+    set_state('conf.written')
+    set_state('salt-master.ready')
 
 @when('salt-master.ready')
 @when('saltinfo.unconfigured')
 def configure_interface(saltinfo):
-    saltinfo.configure()
+    config = hookenv.config()
+    if config['use-dns']:
+        address = socket.gethostname()
+    else:
+        address = unit_public_ip()
+    port = None
+    saltinfo.configure(address,port)
+
+@when('saltinfo.newminion')
+def configure_minion(saltinfo):
+    name = saltinfo.minion
+    print("Insert salt call here for: {}".format(name))
+    remove_state('saltinfo.newminion')
