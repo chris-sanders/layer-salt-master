@@ -3,6 +3,10 @@ options:
     type: string
     default: ""
     description: "A git repository to clone for salt configurations"
+  git-branch:
+    type: string
+    default: "master"
+    description: "The branch to checkout"
   formula-path:
     type: string
     default: "/srv/salt/saltstack-formulas/"
