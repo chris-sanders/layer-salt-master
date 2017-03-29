@@ -129,6 +129,7 @@ def configure_interface(saltinfo):
 
 @when('saltinfo.newminion')
 def configure_minion(saltinfo):
-    name = saltinfo.minion
-    print("Insert salt call here for: {}".format(name))
+    target = saltinfo.minion
+    subprocess.check_call(["salt \"{}\" state.apply".format(target)],shell=True)     
     remove_state('saltinfo.newminion')
+
