@@ -1,4 +1,4 @@
-includes: ['layer:basic','layer:salt-common','layer:hostname','interface:salt']  # if you use any interfaces, add them here
+includes: ['layer:basic','layer:salt-common','layer:hostname','layer:mac','interface:salt']  # if you use any interfaces, add them here
 options:
   basic:
     packages: ['build-essential','libssl-dev','libffi-dev','python-dev']
