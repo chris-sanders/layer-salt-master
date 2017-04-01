@@ -37,8 +37,8 @@ def generate_ssh_key():
 
     # Get or generate keys
     if config['use-resource-keys']:
-        private_path = resource_get('private-key')
-        public_path = resource_get('public-key')
+        private_path = resource_get('private_key')
+        public_path = resource_get('public_key')
 
         if private_path and public_path:
             shutil.copy(private_path,privateKey)
