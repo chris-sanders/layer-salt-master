@@ -15,4 +15,8 @@ options:
     type: boolean
     default: True
     description: "If True master advertises it's hostanme, otherwise IP"
+  use-resource-keys:
+    type: boolean
+    default: True
+    description: "If True waits for private and public key resources, otherwise generates new keys"
 

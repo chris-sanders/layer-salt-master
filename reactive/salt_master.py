@@ -23,6 +23,7 @@ def install_salt_master():
 @when('salt-master.installed')
 def generate_ssh_key(): 
     status_set('maintenance','setting rsa keys')
+    config = hookenv.config()
     keypath = './rsa'
     privateKey = keypath+'/id_rsa'
     publicKey = keypath+'/id_rsa.pub'
@@ -34,11 +35,17 @@ def generate_ssh_key():
           pass
 
     # Get or generate keys
-    private_path = resource_get('private-key')
-    public_path = resource_get('public-key')
-    if private_path and public_path:
-        shutil.copy(private_path,privateKey)
-        shutil.copy(public_path,publicKey)
+    if config['use-resource-keys']:
+        private_path = resource_get('private-key')
+        public_path = resource_get('public-key')
+
+        if private_path and public_path:
+            shutil.copy(private_path,privateKey)
+            shutil.copy(public_path,publicKey)
+        else:
+            print("Add key resources, see juju attach or disable use-resource-keys")
+            status_set('maintenance','waiting for resources')
+            return
     else:
         key = rsa.generate_private_key(
             backend=crypto_default_backend(),
@@ -116,7 +123,7 @@ file_roots:
     set_state('conf.written')
     set_state('salt-master.ready')
 
-@when('salt-master.ready')
+@when('layer-hostname.installed')
 @when('saltinfo.unconfigured')
 def configure_interface(saltinfo):
     config = hookenv.config()
