@@ -36,7 +36,9 @@ During install this charm expects to have access to pull your salt repository. I
 
 # Resources
 
-Two resources are expected by default "public-key" and "private-key". If not present during install you will need to add them and resolve the install error. If you do not provide keys a public and private key will be generated for you. An example of adding keys and resolving install errors is below.
+By default this charm will setup an empty git repository and generate RSA keys for you to push to a private repository. If you want to use an existing repository or keys you can provide resources which this charm will use.
+
+Two resources are available "public-key" and "private-key". Note the charm store shipps with blank dummy keys as it does not allow optional resources. If not present during install you will need to add them and resolve the install error to access your private repository. If you do not provide keys a public and private key will be generated for you. An example of adding keys and resolving install errors is below.
 
     juju attach salt-master private-key=./rsa/id_rsa 
     juju attach salt-master public-key=./rsa/id_rsa.pub
