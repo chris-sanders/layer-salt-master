@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend as crypto_default_backend
 import os
 import subprocess
+from subprocess import CalledProcessError
 import shutil
 import socket
 
@@ -43,9 +44,8 @@ def generate_ssh_key():
             shutil.copy(private_path,privateKey)
             shutil.copy(public_path,publicKey)
         else:
-            print("Add key resources, see juju attach or disable use-resource-keys")
-            status_set('maintenance','waiting for resources')
-            return
+            log("Add key resources, see juju attach or disable use-resource-keys",'ERROR')
+            raise ValueError('Key resources missing, see juju attach or disable use-resource-keys')
     else:
         key = rsa.generate_private_key(
             backend=crypto_default_backend(),
@@ -100,10 +100,13 @@ def pull_repository():
         os.environ["GIT_SSH_COMMAND"] = "ssh -i $JUJU_CHARM_DIR/rsa/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
         subprocess.check_call(["git clone --recursive {} --branch {} /srv".format(config['git-repo'],config['git-branch'])],shell=True)     
         set_state('git-cloned')
-    except Exception as e:
-        status_set('maintenance','repository not available')
-        shutil.rmtree('/srv')
-        log("Unable to pull git repository")
+    except CalledProcessError as e:
+        try:
+            shutil.rmtree('/srv')
+        except:
+            pass
+        log("Unable to pull git repository","ERROR")
+        raise e 
 
 @when('git-cloned')
 @when_not('conf.written')
@@ -135,8 +138,10 @@ def configure_interface(saltinfo):
     saltinfo.configure(address,port)
 
 @when('saltinfo.newminion')
+@when('salt-master.ready')
 def configure_minion(saltinfo):
     target = saltinfo.minion
-    subprocess.check_call(["salt \"{}\" state.apply".format(target)],shell=True)     
-    remove_state('saltinfo.newminion')
+    if target is not None:
+        subprocess.check_call(["salt \"{}\" state.apply".format(target)],shell=True)     
+        remove_state('saltinfo.newminion')
 
