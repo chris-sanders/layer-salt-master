@@ -1,65 +1,53 @@
 # Overview
 
-Describe the intended usage of this charm and anything unique about how this
-charm relates to others here.
-
-This README will be displayed in the Charm Store, it should be either Markdown
-or RST. Ideal READMEs include instructions on how to use the charm, expected
-usage, and charm features that your audience might be interested in. For an
-example of a well written README check out Hadoop:
-http://jujucharms.com/charms/precise/hadoop
-
-Use this as a Markdown reference if you need help with the formatting of this
-README: http://askubuntu.com/editing-help
-
-This charm provides [service][]. Add a description here of what the service
-itself actually does.
-
-Also remember to check the [icon guidelines][] so that your charm looks good
-in the Juju GUI.
+This charm provides [salt-master][salt]. This is server portion of saltstack and is inteded to be related to the salt-minion charm to operate in the Salt Agent configuration.
 
 # Usage
 
-Step by step instructions on using the charm:
+To deploy:
 
-juju deploy servicename
+    juju deploy salt-master
 
-and so on. If you're providing a web service or something that the end user
-needs to go to, tell them here, especially if you're deploying a service that
-might listen to a non-default port.
+You can then juju ssh to the unit and configure your pillar and salt formulas in /srv
 
-You can then browse to http://ip-address to configure the service.
+    juju ssh salt-master/0
+    cd /srv
+
+Note the standard ubuntu user will be configured with RSA keys for pushing and pulling your repository. Salt requires you run commands as root, when executing be sure to use sudo. Ex:
+
+    sudo salt '*' state.apply
 
 ## Scale out Usage
 
-If the charm has any recommendations for running at scale, outline them in
-examples here. For example if you have a memcached relation that improves
-performance, mention it here.
+This charm has not been written to setup multiple masters at this time.
 
 ## Known Limitations and Issues
 
-This not only helps users but gives people a place to start if they want to help
-you add features to your charm.
+ * Adding / configuring salt-formulas after install
+ * Apply salt states on demand not just on minion join
+ * Support multiple master
+ * Agentless configuation
 
 # Configuration
 
-The configuration options will be listed on the charm store, however If you're
-making assumptions or opinionated decisions in the charm (like setting a default
-administrator password), you should detail that here so the user knows how to
-change it immediately, etc.
+Note you should set the option 'use-dns' to True unless you use the interface and adderss options to provide a static DHCP address. The address or fqdn will be provided to salt-minions based on this option and does not currently update if changed.
+
+During install this charm expects to have access to pull your salt repository. If you are not providing RSA keys (see below) a pair will be generated. You can add the public key to your repository by checking 'juju debug-log' for the public key or using 'juju ssh' to find the key in the ubuntu user's .ssh folder.
+
+# Resources
+
+Two resources are expected by default "public-key" and "private-key". If not present during install you will need to add them and resolve the install error. If you do not provide keys a public and private key will be generated for you. An example of adding keys and resolving install errors is below.
+
+    juju attach salt-master private-key=./rsa/id_rsa 
+    juju attach salt-master public-key=./rsa/id_rsa.pub
+    juju resolved salt-master/0
 
 # Contact Information
 
-Though this will be listed in the charm store itself don't assume a user will
-know that, so include that information here:
-
 ## Upstream Project Name
 
-  - Upstream website
-  - Upstream bug tracker
-  - Upstream mailing list or contact information
-  - Feel free to add things if it's useful for users
+  - https://github.com/chris-sanders/layer-salt-master
+  - https://github.com/chris-sanders/layer-salt-master/issues
+  - email: sanders.chris@gmail.com
 
-
-[service]: http://example.com
-[icon guidelines]: https://jujucharms.com/docs/stable/authors-charm-icon
+[salt]: https://saltstack.com/salt-open-source/ 

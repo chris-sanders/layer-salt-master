@@ -1,12 +1,10 @@
 name: salt-master
 summary: Install's the salt master
-maintainer: Chris <sanders.chris@gmail.com>
+maintainer: Chris Sanders <sanders.chris@gmail.com>
 description: |
   Installs the salt master on Ubuntu
 tags:
-  # Replace "misc" with one or more whitelisted tags from this list:
-  # https://jujucharms.com/docs/stable/authors-charm-metadata
-  - misc
+  - ops
 subordinate: false
 series:
   - xenial
@@ -22,9 +20,3 @@ resources:
 provides:
   saltinfo:
     interface: salt
-#requires:
-#  requires-relation:
-#    interface: interface-name
-#peers:
-#  peer-relation:
-#    interface: interface-name
