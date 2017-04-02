@@ -9,11 +9,11 @@ subordinate: false
 series:
   - xenial
 resources:
-  public_key:
+  public-key:
     type: file
     filename: id_rsa.pub
     description: "public ssh key"
-  private_key:
+  private-key:
     type: file
     filename: id_rsa
     description: "private ssh key"
