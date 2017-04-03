@@ -1,4 +1,4 @@
-from charms.reactive import when, when_not, set_state, remove_state
+from charms.reactive import when, when_not, when_any, set_state, remove_state
 from charmhelpers.fetch import apt_install
 from charmhelpers.core import hookenv
 from charmhelpers.core.host import chownr
@@ -87,9 +87,22 @@ def setup_repository():
 
 def create_repository():
     status_set('maintenance','creating salt repository')
-    os.makedirs('/srv/salt/salt-formulas')
-    os.makedirs('/srv/pillar')
+    try:
+        os.makedirs('/srv/salt/saltstack-formulas')
+        os.makedirs('/srv/pillar')
+    except FileExistsError as e:
+        log('/srv folders already exist','INFO')
     subprocess.check_call(["git init /srv"],shell=True)
+    with open('/srv/salt/top.sls','w') as top:
+        top.write('''
+        base:
+            '*':
+                - dummy''')
+    with open('/srv/salt/dummy.sls','w') as dummy:
+        dummy.write('''
+        dummy ping:
+            module.run:
+                - name: test.ping''')
     set_state('salt-master.ready')
     set_state('git-created')
 
@@ -108,7 +121,7 @@ def pull_repository():
         log("Unable to pull git repository","ERROR")
         raise e 
 
-@when('git-cloned')
+@when_any('git-cloned','git-created')
 @when_not('conf.written')
 def setup_formulas():
     config = hookenv.config()
