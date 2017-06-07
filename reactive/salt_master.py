@@ -133,7 +133,7 @@ file_roots:
     - /srv/salt\n''')
         for directory in formulas:
             conf.write("    - {}\n".format(os.path.join(config['formula-path'],directory)))
-    with open('/etc/salt/master.d/auot_accept.conf','w') as conf:
+    with open('/etc/salt/master.d/auto_accept.conf','w') as conf:
         conf.write("auto_accept: True")    
     service_restart('salt-master')
     set_state('conf.written')
