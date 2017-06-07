@@ -139,7 +139,7 @@ file_roots:
     set_state('conf.written')
     set_state('salt-master.ready')
 
-@when('layer-hostname.installed')
+@when_all('layer-hostname.installed','salt-master.ready')
 @when('saltinfo.unconfigured')
 def configure_interface(saltinfo):
     config = hookenv.config()
