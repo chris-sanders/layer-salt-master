@@ -1,4 +1,4 @@
-from charms.reactive import when, when_not, when_any, set_state, remove_state
+from charms.reactive import when, when_all, when_not, when_any, set_state, remove_state
 from charmhelpers.fetch import apt_install
 from charmhelpers.core import hookenv
 from charmhelpers.core.host import chownr
