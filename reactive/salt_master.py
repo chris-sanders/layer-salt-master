@@ -1,4 +1,5 @@
 from charms.reactive import when, when_all, when_not, when_any, set_state, remove_state
+from charmhelpers import fetch
 from charmhelpers.fetch import apt_install
 from charmhelpers.core import hookenv
 from charmhelpers.core.host import chownr
@@ -13,27 +14,31 @@ from subprocess import CalledProcessError
 import shutil
 import socket
 
+
 @when_not('salt-master.installed')
 @when('salt-common.installed')
 def install_salt_master():
-    status_set('maintenance','installing salt-master')
+    status_set('maintenance', 'installing salt-master')
+    fetch.apt_update()
+    # fetch.install('python-cryptography')
     apt_install('salt-master')
     set_state('salt-master.installed')
+
 
 @when_not('ssh-key.generated')
 @when('salt-master.installed')
 def generate_ssh_key(): 
-    status_set('maintenance','setting rsa keys')
+    status_set('maintenance', 'setting rsa keys')
     config = hookenv.config()
     keypath = './rsa'
-    privateKey = keypath+'/id_rsa'
-    publicKey = keypath+'/id_rsa.pub'
+    privateKey = keypath + '/id_rsa'
+    publicKey = keypath + '/id_rsa.pub'
     # Create rsa folder
     try:
         os.mkdir(keypath)
     except OSError as e:
         if e.errno is 17:
-          pass
+            pass
 
     # Get or generate keys
     if config['use-resource-keys']:
@@ -41,10 +46,10 @@ def generate_ssh_key():
         public_path = resource_get('public-key')
 
         if private_path and public_path:
-            shutil.copy(private_path,privateKey)
-            shutil.copy(public_path,publicKey)
+            shutil.copy(private_path, privateKey)
+            shutil.copy(public_path, publicKey)
         else:
-            log("Add key resources, see juju attach or disable use-resource-keys",'ERROR')
+            log("Add key resources, see juju attach or disable use-resource-keys", 'ERROR')
             raise ValueError('Key resources missing, see juju attach or disable use-resource-keys')
     else:
         key = rsa.generate_private_key(
@@ -58,20 +63,21 @@ def generate_ssh_key():
         public_key = key.public_key().public_bytes(
             crypto_serialization.Encoding.OpenSSH,
             crypto_serialization.PublicFormat.OpenSSH)
-        with open(privateKey,'wb') as file:
+        with open(privateKey, 'wb') as file:
             file.write(private_key)
-        with open(publicKey,'wb') as file:
+        with open(publicKey, 'wb') as file:
             file.write(public_key)
         print("Generated RSA key id_rsa.pub: {}".format(repr(public_key)))
     # Correct permissions
-    os.chmod(privateKey,0o600)
-    os.chmod(publicKey,0o600)
+    os.chmod(privateKey, 0o600)
+    os.chmod(publicKey, 0o600)
     # Add to ubuntu user
-    shutil.copy(privateKey,'/home/ubuntu/.ssh/id_rsa')
-    shutil.chown('/home/ubuntu/.ssh/id_rsa',user='ubuntu',group='ubuntu')
-    shutil.copy(publicKey,'/home/ubuntu/.ssh/id_rsa.pub')
-    shutil.chown('/home/ubuntu/.ssh/id_rsa.pub',user='ubuntu',group='ubuntu')
+    shutil.copy(privateKey, '/home/ubuntu/.ssh/id_rsa')
+    shutil.chown('/home/ubuntu/.ssh/id_rsa', user='ubuntu', group='ubuntu')
+    shutil.copy(publicKey, '/home/ubuntu/.ssh/id_rsa.pub')
+    shutil.chown('/home/ubuntu/.ssh/id_rsa.pub', user='ubuntu', group='ubuntu')
     set_state('ssh-key.generated')
+
 
 @when('ssh-key.generated')
 @when_not('git-cloned')
@@ -79,26 +85,27 @@ def generate_ssh_key():
 def setup_repository():
     config = hookenv.config()
     if config['git-repo'] is not "":
-      pull_repository()
+        pull_repository()
     else:
-      create_repository()
-    chownr('/srv',owner='ubuntu',group='ubuntu')
-    status_set('active','')
+        create_repository()
+    chownr('/srv', owner='ubuntu', group='ubuntu')
+    status_set('active', '')
+
 
 def create_repository():
-    status_set('maintenance','creating salt repository')
+    status_set('maintenance', 'creating salt repository')
     try:
         os.makedirs('/srv/salt/saltstack-formulas')
         os.makedirs('/srv/pillar')
     except FileExistsError as e:
-        log('/srv folders already exist','INFO')
-    subprocess.check_call(["git init /srv"],shell=True)
-    with open('/srv/salt/top.sls','w') as top:
+        log('/srv folders already exist', 'INFO')
+    subprocess.check_call(["git init /srv"], shell=True)
+    with open('/srv/salt/top.sls', 'w') as top:
         top.write('''
         base:
             '*':
                 - dummy''')
-    with open('/srv/salt/dummy.sls','w') as dummy:
+    with open('/srv/salt/dummy.sls', 'w') as dummy:
         dummy.write('''
         dummy ping:
             module.run:
@@ -106,40 +113,44 @@ def create_repository():
     set_state('salt-master.ready')
     set_state('git-created')
 
+
 def pull_repository():
-    status_set('maintenance','pulling salt repository')
+    status_set('maintenance', 'pulling salt repository')
     config = hookenv.config()
     try:
         os.environ["GIT_SSH_COMMAND"] = "ssh -i $JUJU_CHARM_DIR/rsa/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-        subprocess.check_call(["git clone --recursive {} --branch {} /srv".format(config['git-repo'],config['git-branch'])],shell=True)     
+        subprocess.check_call(["git clone --recursive {} --branch {} /srv".format(config['git-repo'], config['git-branch'])], shell=True)     
         set_state('git-cloned')
     except CalledProcessError as e:
         try:
             shutil.rmtree('/srv')
         except:
             pass
-        log("Unable to pull git repository","ERROR")
+        log("Unable to pull git repository", "ERROR")
         raise e 
 
-@when_any('git-cloned','git-created')
+
+@when_any('git-cloned', 'git-created')
 @when_not('conf.written')
 def setup_formulas():
     config = hookenv.config()
-    formulas = [name for name in os.listdir(config['formula-path']) if os.path.isdir(os.path.join(config['formula-path'],name))] 
-    with open('/etc/salt/master.d/file_roots.conf','w') as conf:
+    formulas = [name for name in os.listdir(config['formula-path']) if
+                os.path.isdir(os.path.join(config['formula-path'], name))] 
+    with open('/etc/salt/master.d/file_roots.conf', 'w') as conf:
         conf.write('''
 file_roots:
   base:
     - /srv/salt\n''')
         for directory in formulas:
-            conf.write("    - {}\n".format(os.path.join(config['formula-path'],directory)))
-    with open('/etc/salt/master.d/auto_accept.conf','w') as conf:
+            conf.write("    - {}\n".format(os.path.join(config['formula-path'], directory)))
+    with open('/etc/salt/master.d/auto_accept.conf', 'w') as conf:
         conf.write("auto_accept: True")    
     service_restart('salt-master')
     set_state('conf.written')
     set_state('salt-master.ready')
 
-@when_all('layer-hostname.installed','salt-master.ready')
+
+@when_all('layer-hostname.installed', 'salt-master.ready')
 @when('saltinfo.unconfigured')
 def configure_interface(saltinfo):
     config = hookenv.config()
@@ -148,13 +159,14 @@ def configure_interface(saltinfo):
     else:
         address = unit_public_ip()
     port = None
-    saltinfo.configure(address,port)
+    saltinfo.configure(address, port)
+
 
 @when('saltinfo.newminion')
 @when('salt-master.ready')
 def configure_minion(saltinfo):
     target = saltinfo.minion
     if target is not None:
-        subprocess.check_call(["salt \"{}\" state.apply".format(target)],shell=True)     
+        subprocess.check_call(["salt \"{}\" state.apply".format(target)], shell=True)     
         remove_state('saltinfo.newminion')
 

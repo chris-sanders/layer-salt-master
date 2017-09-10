@@ -1,5 +1,6 @@
 includes: ['layer:basic','layer:salt-common','layer:hostname','layer:version','interface:salt']  # if you use any interfaces, add them here
 options:
   basic:
-    packages: ['build-essential','libssl-dev','libffi-dev','python-dev']
+    # packages: ['build-essential','libssl-dev','libffi-dev','python3.5-dev','python3-dev']
+    packages: ['python3-cryptography']
 repo: git@github.com:chris-sanders/layer-salt-master.git
