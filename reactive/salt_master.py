@@ -22,12 +22,13 @@ def install_salt_master():
     fetch.apt_update()
     # fetch.install('python-cryptography')
     apt_install('salt-master')
+    subprocess.check_call(['pip3 install --upgrade cryptography'], shell=True)
     set_state('salt-master.installed')
 
 
 @when_not('ssh-key.generated')
 @when('salt-master.installed')
-def generate_ssh_key(): 
+def generate_ssh_key():
     status_set('maintenance', 'setting rsa keys')
     config = hookenv.config()
     keypath = './rsa'
@@ -118,8 +119,10 @@ def pull_repository():
     status_set('maintenance', 'pulling salt repository')
     config = hookenv.config()
     try:
-        os.environ["GIT_SSH_COMMAND"] = "ssh -i $JUJU_CHARM_DIR/rsa/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
-        subprocess.check_call(["git clone --recursive {} --branch {} /srv".format(config['git-repo'], config['git-branch'])], shell=True)     
+        os.environ["GIT_SSH_COMMAND"] = ("ssh -i $JUJU_CHARM_DIR/rsa/id_rsa -o UserKnownHostsFile=/dev/null"
+                                         "-o StrictHostKeyChecking=no")
+        subprocess.check_call(["git clone --recursive {} --branch {} /srv".format(config['git-repo'], config['git-branch'])],
+                              shell=True)
         set_state('git-cloned')
     except CalledProcessError as e:
         try:
@@ -127,7 +130,7 @@ def pull_repository():
         except:
             pass
         log("Unable to pull git repository", "ERROR")
-        raise e 
+        raise e
 
 
 @when_any('git-cloned', 'git-created')
@@ -135,7 +138,7 @@ def pull_repository():
 def setup_formulas():
     config = hookenv.config()
     formulas = [name for name in os.listdir(config['formula-path']) if
-                os.path.isdir(os.path.join(config['formula-path'], name))] 
+                os.path.isdir(os.path.join(config['formula-path'], name))]
     with open('/etc/salt/master.d/file_roots.conf', 'w') as conf:
         conf.write('''
 file_roots:
@@ -144,7 +147,7 @@ file_roots:
         for directory in formulas:
             conf.write("    - {}\n".format(os.path.join(config['formula-path'], directory)))
     with open('/etc/salt/master.d/auto_accept.conf', 'w') as conf:
-        conf.write("auto_accept: True")    
+        conf.write("auto_accept: True")
     service_restart('salt-master')
     set_state('conf.written')
     set_state('salt-master.ready')
@@ -167,6 +170,6 @@ def configure_interface(saltinfo):
 def configure_minion(saltinfo):
     target = saltinfo.minion
     if target is not None:
-        subprocess.check_call(["salt \"{}\" state.apply".format(target)], shell=True)     
+        subprocess.check_call(["salt \"{}\" state.apply".format(target)], shell=True)
         remove_state('saltinfo.newminion')
 
