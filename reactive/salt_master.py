@@ -120,7 +120,7 @@ def pull_repository():
     config = hookenv.config()
     try:
         os.environ["GIT_SSH_COMMAND"] = ("ssh -i $JUJU_CHARM_DIR/rsa/id_rsa -o UserKnownHostsFile=/dev/null"
-                                         "-o StrictHostKeyChecking=no")
+                                         " -o StrictHostKeyChecking=no")
         subprocess.check_call(["git clone --recursive {} --branch {} /srv".format(config['git-repo'], config['git-branch'])],
                               shell=True)
         set_state('git-cloned')
