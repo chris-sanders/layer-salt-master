@@ -149,6 +149,7 @@ file_roots:
     with open('/etc/salt/master.d/auto_accept.conf', 'w') as conf:
         conf.write("auto_accept: True")
     service_restart('salt-master')
+    status_set('active', 'Salt-master is ready')
     set_state('conf.written')
     set_state('salt-master.ready')
 
