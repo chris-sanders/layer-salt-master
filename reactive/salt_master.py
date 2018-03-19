@@ -16,7 +16,6 @@ import socket
 
 
 @when_not('salt-master.installed')
-@when('salt-common.installed')
 def install_salt_master():
     status_set('maintenance', 'installing salt-master')
     fetch.apt_update()
